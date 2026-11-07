@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MultiCorder">
+  <!-- Ícone do MultiCorder: grade 2×2 de quadros de vídeo (os canais) com o botão de gravar no meio. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e2330"/>
+      <stop offset="1" stop-color="#0f1218"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="80" y="80" width="164" height="164" rx="30" fill="#7aa2ff"/>
+  <rect x="268" y="80" width="164" height="164" rx="30" fill="#f08a4b"/>
+  <rect x="80" y="268" width="164" height="164" rx="30" fill="#b48cff"/>
+  <rect x="268" y="268" width="164" height="164" rx="30" fill="#2fbf71"/>
+  <circle cx="256" cy="256" r="84" fill="#0f1218"/>
+  <circle cx="256" cy="256" r="62" fill="#ff3b4a"/>
+</svg>

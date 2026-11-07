@@ -1,0 +1,24 @@
+# Projetos e mídia exportada (são seus, grandes e pessoais: não vão para o repositório)
+*.mcproj
+*.mp4
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.mid
+*.midi
+
+# Python
+__pycache__/
+*.pyc
+
+# Sistema e Google Drive
+desktop.ini
+Thumbs.db
+.DS_Store
+*.tmp
+~$*
+
+# Configurações locais do editor/assistente (as compartilháveis ficam, ex.: .claude/launch.json)
+.claude/settings.local.json
+.vscode/

@@ -1,0 +1,26 @@
+Kits de bateria acústica do MultiCorder
+=======================================
+
+Os sons destes kits foram extraídos (misturando microfones, cortando e ajustando volume) de
+bibliotecas gravadas e liberadas em domínio público (Creative Commons Zero 1.0). Não é preciso
+dar crédito, mas fica o agradecimento:
+
+rock/  Big Rusty Drums — Karoryfer Samples
+       https://github.com/sfzinstruments/karoryfer.big-rusty-drums  (licença CC0 1.0)
+
+jazz/  Virtuosity Drums — Versilian Studios e Karoryfer Samples
+       https://github.com/sfzinstruments/virtuosity_drums  (licença CC0 1.0)
+
+swirly/  Swirly Drums — Karoryfer Samples
+         https://github.com/sfzinstruments/karoryfer.swirly-drums  (licença CC0 1.0)
+         O som "Caixa (rimshot)" deste kit é a batida na borda da caixa (snare edge).
+
+unruly/  Unruly Drums — Karoryfer Samples
+         https://github.com/sfzinstruments/karoryfer.unruly-drums  (licença CC0 1.0)
+         Os toms são as caixas de 13", 14" e 22" tocadas como tom ("clean"); o surdo é a de 22" na
+         versão "dirty".
+         "Bumbo 808 / aberto" é o bumbo na versão "dirtiest", com mais chiado da esteira.
+
+Cada som tem 4 camadas de força (do toque mais leve ao mais forte) e até 2 variações por camada,
+para a batida não soar repetida. Palmas, shaker e pandeiro não existem nesses kits e continuam vindo do kit sintetizado do
+app (o cowbell também, exceto no Swirly).
