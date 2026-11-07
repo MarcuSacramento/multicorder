@@ -279,9 +279,7 @@ table.caps th { color: var(--muted); font-weight: 500; width: 40%; }
 .dr-follow.on { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
 .dr-grid-now { font: 600 .75em system-ui, sans-serif; color: var(--warn); min-width: 7.5em; text-align: center; }
 
-/* Faixa-guia do YouTube */
 .small.error { color: var(--rec); }
-.yt-cmd { display: block; margin: .4em 0; padding: .45em .6em; background: rgba(0,0,0,.35); border-radius: 6px; font-size: .9em; user-select: all; word-break: break-all; }
 .undo-group { display: flex; gap: 4px; }
 .undo-group button { font-size: 1.05rem; line-height: 1; }
 .punch { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; padding: 6px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 4px 0; }

@@ -1,0 +1,175 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  MultiCorder - site estático. Um bucket S3 privado guarda os arquivos e o CloudFront entrega
+  com HTTPS (necessário para câmera, microfone e armazenamento no navegador), compressão e cache.
+
+# Como usar: veja docs/PUBLICAR-AWS.md. Resumo:
+#   aws cloudformation deploy --stack-name multicorder --template-file deploy/aws-site.yaml --region sa-east-1
+#   powershell -File deploy/publicar-aws.ps1
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: ''
+    Description: >-
+      (Opcional) Domínio próprio, ex.: app.seudominio.com.br. Deixe vazio para usar o endereço
+      *.cloudfront.net que a AWS dá de graça.
+  CertificateArn:
+    Type: String
+    Default: ''
+    Description: >-
+      (Opcional, junto com DomainName) ARN do certificado do ACM para o domínio. Precisa ter sido
+      criado na região us-east-1 (Norte da Virgínia), que é a que o CloudFront usa.
+  PriceClass:
+    Type: String
+    Default: PriceClass_All
+    AllowedValues: [PriceClass_100, PriceClass_200, PriceClass_All]
+    Description: >-
+      Onde ficam as cópias do site. PriceClass_All inclui a América do Sul (mais rápido no Brasil);
+      PriceClass_100 só EUA, Canadá e Europa.
+
+Conditions:
+  HasDomain: !And
+    - !Not [!Equals [!Ref DomainName, '']]
+    - !Not [!Equals [!Ref CertificateArn, '']]
+
+Resources:
+  # Bucket privado: ninguém acessa direto pela internet; só o CloudFront (pela política abaixo).
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  # Identidade do CloudFront para ler o bucket (o jeito atual e recomendado: OAC).
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${AWS::StackName}-oac'
+        Description: CloudFront lê o bucket do MultiCorder
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # Cache na CDN: segue o Cache-Control que o script de publicação grava em cada arquivo
+  # (s-maxage longo; cada publicação limpa o cache). Comprime com gzip e brotli.
+  CachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub '${AWS::StackName}-cache'
+        Comment: Segue o Cache-Control dos arquivos
+        MinTTL: 0
+        DefaultTTL: 86400
+        MaxTTL: 31536000
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingGzip: true
+          EnableAcceptEncodingBrotli: true
+          CookiesConfig:
+            CookieBehavior: none
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+
+  # Cabeçalhos de segurança em todas as respostas.
+  HeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub '${AWS::StackName}-headers'
+        Comment: Segurança do MultiCorder
+        SecurityHeadersConfig:
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: true
+            Override: true
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          ReferrerPolicy:
+            ReferrerPolicy: strict-origin-when-cross-origin
+            Override: true
+        CustomHeadersConfig:
+          Items:
+            # Câmera, microfone e MIDI só para o próprio site
+            - Header: Permissions-Policy
+              Value: 'camera=(self), microphone=(self), midi=(self), geolocation=(), payment=()'
+              Override: true
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: MultiCorder
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: !Ref PriceClass
+        Aliases: !If [HasDomain, [!Ref DomainName], !Ref AWS::NoValue]
+        ViewerCertificate: !If
+          - HasDomain
+          - AcmCertificateArn: !Ref CertificateArn
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
+        Origins:
+          - Id: s3site
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt OriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: s3site
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          CachePolicyId: !Ref CachePolicy
+          ResponseHeadersPolicyId: !Ref HeadersPolicy
+
+  # Só esta distribuição do CloudFront pode ler os arquivos do bucket.
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: SomenteCloudFront
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${SiteBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}'
+
+Outputs:
+  BucketName:
+    Description: Bucket com os arquivos do site
+    Value: !Ref SiteBucket
+  DistributionId:
+    Description: Distribuição do CloudFront (usada para limpar o cache a cada publicação)
+    Value: !Ref Distribution
+  SiteUrl:
+    Description: Endereço do MultiCorder
+    Value: !If [HasDomain, !Sub 'https://${DomainName}', !Sub 'https://${Distribution.DomainName}']
+  CloudFrontDomain:
+    Description: Domínio do CloudFront (para apontar um CNAME do seu domínio, se usar um)
+    Value: !GetAtt Distribution.DomainName

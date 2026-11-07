@@ -65,7 +65,7 @@ function guideStrip(app) {
   return h('div', { class: 'strip guide', role: 'group', 'aria-label': 'Faixa-guia' },
     h('div', { class: 'strip-name static', title: g.name }, h('span', { class: 'num' }, '♪'), h('span', { class: 'nm' }, 'Guia')),
     h('div', { class: 'take has', title: g.url ? `${g.name}\n${g.url}` : g.name },
-      g.source === 'midi' ? `MIDI · ${fmtTime(g.duration)}` : g.source === 'youtube' ? `YouTube · ${fmtTime(g.duration)}` : fmtTime(g.duration)),
+      g.source === 'midi' ? `MIDI · ${fmtTime(g.duration)}` : fmtTime(g.duration)),
     h('div', { class: 'fader-row' },
       h('canvas', { class: 'meter', width: 10, height: 130, 'data-meter': GUIDE_ID, 'aria-hidden': 'true' }),
       fader('Volume da faixa-guia', g.volumeDb, (v) => { g.volumeDb = v; app.touch(); })),
@@ -73,8 +73,7 @@ function guideStrip(app) {
     numberField({ label: 'Início ms', value: g.offsetMs, min: -60000, max: 600000, step: 1, onChange: (v) => { g.offsetMs = v; app.touch(); }, width: '5em' }),
     checkbox({ label: 'No vídeo final', checked: g.includeInExport !== false, onChange: (v) => { g.includeInExport = v; app.touch(); } }),
     h('div', { class: 'row tight' },
-      h('button', { class: 'ghost small', onClick: () => picker.click(), title: 'Trocar por um arquivo de áudio ou MIDI' }, 'Trocar'),
-      h('button', { class: 'ghost small', onClick: () => openYoutubeDialog(app), title: 'Trocar por uma música do YouTube' }, 'YouTube')),
+      h('button', { class: 'ghost small', onClick: () => picker.click(), title: 'Trocar por um arquivo de áudio ou MIDI' }, 'Trocar')),
     h('div', { class: 'row tight' },
       h('button', { class: 'ghost small danger', onClick: () => { if (confirm('Remover a faixa-guia?')) app.removeGuide(); } }, 'Remover')),
     picker);
@@ -119,82 +118,6 @@ function guidePicker(app, kind = 'any') {
     type: 'file', accept, hidden: true,
     onChange: (e) => { const f = e.target.files[0]; if (f) app.importGuide(f); },
   });
-}
-
-/** Janela "Faixa-guia do YouTube": cola o link, o servidor local baixa o áudio com o yt-dlp. */
-function openYoutubeDialog(app) {
-  const input = h('input', { type: 'url', placeholder: 'https://www.youtube.com/watch?v=…', style: { width: '100%' }, 'aria-label': 'Link do YouTube' });
-  const status = h('div', { class: 'small muted', role: 'status' }, 'Verificando o servidor…');
-  const bar = h('progress', { max: 1, hidden: true, style: { width: '100%' } });
-  const go = h('button', { class: 'primary', disabled: true }, 'Baixar e usar');
-  let ctrl = null;
-
-  const check = async () => {
-    go.disabled = true;
-    const st = await app.youtubeStatus();
-    if (st.available) {
-      status.className = 'small ok';
-      status.textContent = `Pronto (yt-dlp ${st.version}).`;
-      go.disabled = false;
-      return;
-    }
-    status.className = 'small';
-    if (st.noServer) {
-      status.replaceChildren('Isto só funciona com o app aberto pelo ', h('strong', null, 'iniciar.bat'), ' (ou python serve.py), que faz o download no seu computador.');
-      return;
-    }
-    const cmd = h('code', { class: 'yt-cmd' }, st.install);
-    status.replaceChildren(
-      h('div', null, 'Falta instalar o ', h('strong', null, 'yt-dlp'), ' (programa gratuito que baixa o áudio). Rode este comando num terminal (uma vez só) e clique em "Verificar de novo":'),
-      cmd,
-      h('div', { class: 'row tight' },
-        h('button', { class: 'ghost small', onClick: (e) => navigator.clipboard?.writeText(st.install).then(() => { e.target.textContent = 'Copiado ✓'; }) }, 'Copiar comando'),
-        h('button', { class: 'ghost small', onClick: check }, 'Verificar de novo')));
-  };
-
-  const start = async () => {
-    const url = input.value.trim();
-    if (!url) { input.focus(); return; }
-    go.disabled = input.disabled = true;
-    bar.hidden = false;
-    bar.removeAttribute('value');
-    status.className = 'small muted';
-    status.textContent = 'Pedindo o áudio ao YouTube…';
-    ctrl = new AbortController();
-    try {
-      const ok = await app.importYoutubeGuide(url, {
-        signal: ctrl.signal,
-        onProgress: (j) => {
-          if (j.status === 'downloading' && j.progress != null) {
-            bar.value = j.progress;
-            status.textContent = `Baixando… ${Math.round(j.progress * 100)}%`;
-          } else if (j.status === 'decoding') status.textContent = 'Preparando o áudio…';
-        },
-      });
-      if (ok) dlg.close();
-      else throw new Error('o navegador não conseguiu abrir o áudio baixado');
-    } catch (e) {
-      if (e.message === 'cancelado') return;
-      status.className = 'small error';
-      status.textContent = `Não deu certo: ${e.message}`;
-      bar.hidden = true;
-      go.disabled = input.disabled = false;
-    }
-  };
-  go.addEventListener('click', start);
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !go.disabled) start(); });
-
-  const dlg = openDialog('Faixa-guia do YouTube', [
-    h('div', { class: 'field' }, h('label', null, 'Link do vídeo'), input),
-    status,
-    bar,
-    h('p', { class: 'muted small' },
-      'O áudio é baixado pelo servidor local (no seu computador) e fica guardado no projeto. ',
-      'Use só músicas que você tem direito de usar: por isso a guia do YouTube começa fora do vídeo final (opção "No vídeo final" no mixer).'),
-    h('div', { class: 'row' }, go),
-  ], { onClose: () => ctrl?.abort() });
-  input.focus();
-  check();
 }
 
 function masterStrip(app) {
@@ -268,8 +191,7 @@ export function renderMixer(app, el) {
     strips.push(h('div', { class: 'strip add-guide' },
       h('button', { class: 'ghost small', onClick: () => audio.click(), title: 'WAV, MP3, OGG, FLAC, M4A' }, '+ Guia (áudio)'),
       h('button', { class: 'ghost small', onClick: () => midi.click(), title: 'Arquivo .mid: o app toca as notas com sons sintetizados (canal 10 = bateria)' }, '+ Guia (MIDI)'),
-      h('button', { class: 'ghost small', onClick: () => openYoutubeDialog(app), title: 'Cole um link do YouTube: o áudio é baixado e vira a faixa-guia' }, '+ Guia (YouTube)'),
-      h('p', { class: 'muted small' }, 'Referência (base, playback) em áudio, MIDI ou do YouTube. Não ocupa quadro na grade.'),
+      h('p', { class: 'muted small' }, 'Referência (base, playback) em áudio ou MIDI. Não ocupa quadro na grade.'),
       audio, midi));
   }
   strips.push(masterStrip(app));

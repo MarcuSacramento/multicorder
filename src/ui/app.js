@@ -713,8 +713,6 @@ app.importGuide = async (file, { source = null, url = null, name = null } = {}) 
       volumeDb: -6, mute: false, offsetMs: 0, includeInExport: true, ...keep,
       fileId, cutBase: p.cuts.length, name: name || file.name, duration: buf.duration, source: source || (midi ? 'midi' : 'audio'), url,
     };
-    // Música de terceiros: por padrão só serve de referência e não vai para o vídeo final
-    if (source === 'youtube') p.guide.includeInExport = false;
     S.guideKey = fileId;
     app.engine.setBuffer(GUIDE_ID, buf);
     app.touch(true);
@@ -725,47 +723,6 @@ app.importGuide = async (file, { source = null, url = null, name = null } = {}) 
     toast(`Não foi possível ler ${midi ? 'o MIDI' : 'o áudio'}: ${e.message}`, 'error');
     return false;
   }
-};
-
-// ---------- Faixa-guia do YouTube (baixada pelo servidor local com o yt-dlp) ----------
-
-const api = async (path, opts) => {
-  const r = await fetch(path, opts);
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(new Error(j.error || `erro ${r.status}`), { info: j });
-  return j;
-};
-
-/** O servidor local consegue baixar do YouTube? { available, version } ou { available: false, install }. */
-app.youtubeStatus = async () => {
-  try { return await api('/api/youtube/status'); } catch { return { available: false, noServer: true }; }
-};
-
-/**
- * Baixa o áudio de um link do YouTube e usa como faixa-guia.
- * `onProgress({ status, progress })` acompanha o download; `signal` cancela a espera.
- */
-app.importYoutubeGuide = async (url, { onProgress, signal } = {}) => {
-  const p = S.project;
-  const { id } = await api('/api/youtube', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }),
-  });
-  let job;
-  for (;;) {
-    if (signal?.aborted) throw new Error('cancelado');
-    job = await api(`/api/youtube/job?id=${id}`);
-    onProgress?.(job);
-    if (job.status === 'done') break;
-    if (job.status === 'error') throw new Error(job.error);
-    await new Promise((r) => setTimeout(r, 400));
-  }
-  onProgress?.({ status: 'decoding', progress: 1 });
-  const r = await fetch(`/api/youtube/file?id=${id}`);
-  if (!r.ok) throw new Error('o arquivo baixado sumiu do servidor');
-  const blob = await r.blob();
-  if (S.project !== p) return false;
-  const file = new File([blob], `${job.title}.${job.ext}`, { type: blob.type });
-  return app.importGuide(file, { source: 'youtube', url, name: job.title });
 };
 
 app.removeGuide = async () => {

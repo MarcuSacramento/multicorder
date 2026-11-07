@@ -327,7 +327,7 @@ Cada canal, a **Bateria**, a **Guia** e o **Master** têm uma coluna: medidor, v
 - **Faixa-guia**: uma música de referência para tocar junto.
   - **+ Guia (áudio)**: um arquivo WAV ou MP3.
   - **+ Guia (MIDI)**: um arquivo .mid, que o app toca com sons sintetizados (como neste projeto).
-  - **+ Guia (YouTube)**: um link; o servidor local baixa só o áudio. Precisa do yt-dlp instalado (`python -m pip install -U yt-dlp`). Ela começa sem ir para o vídeo final; use só músicas que você tem direito de usar.
+  - A guia serve de referência para tocar junto. **No vídeo final** escolhe se ela entra também no vídeo exportado; use só músicas que você tem direito de usar.
 - **Master**: volume geral, **Limitador** (segura os picos), o reverb compartilhado e o retorno dele, e **📈 Espectro**:
 
 ![Espectro do master](manual/img/24-espectro.png)

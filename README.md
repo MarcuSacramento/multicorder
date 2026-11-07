@@ -36,7 +36,9 @@ Não há etapa de build: é JavaScript puro com módulos ES. As únicas dependê
 - o empacotador MP4/WebM (`mp4-muxer` / `webm-muxer`);
 - e, só em navegadores sem AAC (Firefox no Windows), o codificador AAC do FFmpeg em WebAssembly (`@mediabunny/aac-encoder`, ~1 MB; FFmpeg sob LGPL-2.1, wrapper sob MPL-2.0).
 
-**Guia do YouTube** (opcional): precisa do **yt-dlp**, instalado uma vez com `python -m pip install -U yt-dlp`. Se o download parar de funcionar, atualize com o mesmo comando. Vídeos de até 20 minutos, sem transmissões ao vivo nem playlists.
+**Publicar na internet (AWS):** o app é só arquivos estáticos, então dá para publicar num bucket S3 com CloudFront (HTTPS e CDN). O passo a passo, com o modelo de infraestrutura e o script que envia os arquivos com os tipos e o cache certos, está em [docs/PUBLICAR-AWS.md](docs/PUBLICAR-AWS.md).
+
+**Cache:** o servidor local e a publicação na AWS usam as mesmas regras. A página, o código e os estilos ficam guardados no navegador, que só confere se mudaram (resposta 304, sem baixar de novo). Os kits de bateria e os ícones ficam guardados por 1 dia sem nem conferir.
 
 ---
 
@@ -65,7 +67,7 @@ O passo a passo completo está no [manual](docs/MANUAL.md#5-primeira-gravação-
 | **Faixas** | onda do som por canal, legenda das cores, zoom, linhas de volume e de pan ao longo da música | [Faixas](docs/MANUAL.md#9-faixas) |
 | **Vídeo** | dezenas de layouts (grades, mosaicos, destaque, PiP), trocas de layout no meio da música, letra/legenda na tela, marca d'água, aparência da grade | [Prévia e layouts](docs/MANUAL.md#7-prévia-e-layouts) |
 | **Bateria** | 5 kits (4 acústicos gravados), padrões, grade com zoom e tercinas, swing, duração das batidas, pancada, sons próprios, MIDI (importar, exportar, controlador USB), tocar pelo teclado | [Bateria](docs/MANUAL.md#10-bateria) |
-| **Mixer** | volume, pan, mudo, solo, faixa-guia (áudio, MIDI ou YouTube), limitador, reverb compartilhado, espectro ao vivo | [Mixer](docs/MANUAL.md#11-mixer-e-faixa-guia) |
+| **Mixer** | volume, pan, mudo, solo, faixa-guia (áudio ou MIDI), limitador, reverb compartilhado, espectro ao vivo | [Mixer](docs/MANUAL.md#11-mixer-e-faixa-guia) |
 | **Efeitos** | predefinições por instrumento, EQ, gate, compressor, dobrar voz, chorus, distorção, wah, tremolo, eco, reverb | [Efeitos](docs/MANUAL.md#12-efeitos-do-canal) |
 | **Exportação** | destinos prontos (Reels, YouTube, Instagram, WhatsApp), MP4/WebM de 720p a 4K, 30/60 fps, WAV do mix e faixas separadas | [Exportar](docs/MANUAL.md#13-exportar) |
 
@@ -78,10 +80,11 @@ Atalhos: Espaço tocar/parar · R gravar · Alt+R gravar do cursor · Shift+R pu
 ### Estrutura
 
 ```
-index.html, styles.css, serve.py (servidor local + download da guia do YouTube), iniciar.bat
+index.html, styles.css, serve.py (servidor local de arquivos, com os tipos e o cache), iniciar.bat
 icons/        ícone (SVG, PNG, ICO) e manifest.webmanifest na raiz
 kits/         sons dos kits de bateria acústicos (CC0; créditos em kits/CREDITOS.txt)
-docs/         MANUAL.md e as fotos (docs/manual/img)
+docs/         MANUAL.md e as fotos (docs/manual/img); PUBLICAR-AWS.md
+deploy/       aws-site.yaml (S3 + CloudFront, CloudFormation) e publicar-aws.ps1 (envio com tipos e cache)
 src/engine/   motor (sem dependência de interface — RNF-14)
   audio-engine.js   AudioContext, transporte, metrônomo, entrada, monitoração, captura
   mix-graph.js      grafo de mixagem (o mesmo na reprodução e na exportação offline), linhas de volume/pan, espectro
