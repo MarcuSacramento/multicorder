@@ -17,7 +17,7 @@ export async function packProject(store, pid) {
 }
 
 /** Importa como projeto novo (id novo), para nunca sobrescrever um existente. */
-export async function unpackProject(store, blob) {
+export async function unpackProject(store, blob, onProgress) {
   const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
   if (new TextDecoder().decode(head.slice(0, 8)) !== MAGIC) throw new Error('Arquivo não é um projeto do Multicorder (.mcproj).');
   const hlen = new DataView(head.buffer).getUint32(8, true);
@@ -25,11 +25,16 @@ export async function unpackProject(store, blob) {
   let off = 12 + hlen;
   let projectJson = null;
   const id = uid('p');
-  for (const f of header.files) {
+  const total = header.files.reduce((a, f) => a + f.size, 0) || 1;
+  let done = 0;
+  onProgress?.(0, header.files.length);
+  for (const [i, f] of header.files.entries()) {
     const part = blob.slice(off, off + f.size);
     off += f.size;
     if (f.path === 'project.json') projectJson = await part.text();
     else await store.writePath(id, f.path, part);
+    done += f.size;
+    onProgress?.(done / total, header.files.length, i + 1);
   }
   if (!projectJson) { await store.remove(id).catch(() => {}); throw new Error('Arquivo sem project.json.'); }
   const p = normalizeProject(JSON.parse(projectJson));

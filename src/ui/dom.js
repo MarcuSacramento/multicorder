@@ -96,6 +96,30 @@ export function toast(msg, kind = 'info', ms = 6000) {
   setTimeout(() => t.remove(), ms);
 }
 
+/**
+ * Aviso de carregamento em tela cheia com barra de progresso.
+ * `set(fração, texto)` atualiza (fração null = indeterminado); `close()` remove.
+ */
+export function busy(title) {
+  const bar = h('progress', { max: 1 });
+  const pct = h('span', { class: 'busy-pct' }, '');
+  const detail = h('p', { class: 'muted busy-detail' }, '');
+  const el = h('div', { class: 'busy-overlay', role: 'status', 'aria-live': 'polite' },
+    h('div', { class: 'busy-card' },
+      h('strong', null, title),
+      h('div', { class: 'progress-row' }, bar, pct),
+      detail));
+  document.body.append(el);
+  return {
+    set(frac, text) {
+      if (frac == null) { bar.removeAttribute('value'); pct.textContent = ''; }
+      else { const f = Math.max(0, Math.min(1, frac)); bar.value = f; pct.textContent = `${Math.round(f * 100)}%`; }
+      if (text != null) detail.textContent = text;
+    },
+    close() { el.remove(); },
+  };
+}
+
 export function download(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = h('a', { href: url, download: filename });

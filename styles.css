@@ -221,6 +221,10 @@ table.caps th { color: var(--muted); font-weight: 500; width: 40%; }
 .presets { margin: 6px 0; align-items: flex-end; }
 .progress-row { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
 .progress-row progress { flex: 1; height: 14px; }
+.busy-overlay { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; background: rgba(8,10,14,.6); padding: 16px; }
+.busy-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; width: min(420px, 100%); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+.busy-pct { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
+.busy-detail { margin: 0; font-size: .9em; min-height: 1.3em; }
 .results { padding-left: 18px; }
 .results a { color: var(--accent); }
 

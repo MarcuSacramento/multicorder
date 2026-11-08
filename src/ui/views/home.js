@@ -3,7 +3,7 @@ import { packProject, unpackProject } from '../../engine/archive.js';
 import { LAYOUTS } from '../../engine/layout.js';
 import { createProject, normalizeProject, TIME_SIGNATURES } from '../../engine/project.js';
 import { uid } from '../../engine/util.js';
-import { download, h, numberField, safeName, select, toast } from '../dom.js';
+import { busy, download, h, numberField, safeName, select, toast } from '../dom.js';
 
 export async function renderHome(app, root) {
   let list = [];
@@ -46,12 +46,19 @@ export async function renderHome(app, root) {
   const fileInput = h('input', {
     type: 'file', accept: '.mcproj', hidden: true, onChange: async (e) => {
       const f = e.target.files[0];
+      e.target.value = ''; // permite importar o mesmo arquivo de novo
       if (!f) return;
+      const b = busy(`Importando "${f.name}"…`);
+      const mb = (n) => (n / 1048576).toFixed(1).replace('.', ',');
       try {
-        const p = await unpackProject(app.store, f);
-        toast(`Projeto "${p.name}" importado.`);
+        const p = await unpackProject(app.store, f, (frac, n, i = 0) => {
+          b.set(frac, `${mb(f.size * frac)} de ${mb(f.size)} MB · arquivo ${i} de ${n}`);
+        });
+        b.set(1, 'Concluído.');
+        toast(`Importação concluída: projeto "${p.name}".`);
         refresh();
-      } catch (err) { toast(err.message, 'error'); }
+      } catch (err) { toast(`Falha ao importar: ${err.message}`, 'error'); }
+      finally { b.close(); }
     },
   });
 

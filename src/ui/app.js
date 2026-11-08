@@ -19,7 +19,7 @@ import { TakeRecorder } from '../engine/recorder.js';
 import { cleanActive, cleanKey, processAudio } from '../engine/dsp.js';
 import { ProjectStore } from '../engine/storage.js';
 import { fmtBytes, gainToDb, uid } from '../engine/util.js';
-import { collapsible, download, h, safeName, toast } from './dom.js';
+import { busy, collapsible, download, h, safeName, toast } from './dom.js';
 import { renderExportPanel } from './views/export.js';
 import { renderDrumsPanel, updateDrumsPanel } from './views/drums.js';
 import { renderHome } from './views/home.js';
@@ -157,9 +157,14 @@ app.openProject = async (id) => {
   app.stage.mount(S.ui.stageWrap);
   app.renderPanels();
   startLoop();
-  await app.loadAllMedia();
-  await loadDrumSamples();
-  await app.flushDrums();
+  const b = busy(`Abrindo "${p.name}"…`);
+  try {
+    await app.loadAllMedia((done, total) => b.set(total ? done / total : 1, `Mídias carregadas: ${done} de ${total}`));
+    b.set(null, 'Carregando bateria…');
+    await loadDrumSamples();
+    await app.flushDrums();
+  } finally { b.close(); }
+  toast(`Projeto "${p.name}" carregado.`, 'info', 3000);
   resetHistory();
   if (recovered) toast(recovered, 'warn', 12000);
   checkStorage(false);
@@ -558,7 +563,7 @@ app.swapChannels = (i, j) => {
 
 // ---------------------------------------------------------------- Mídia das tomadas
 
-app.loadAllMedia = async () => {
+app.loadAllMedia = async (onProgress) => {
   const p = S.project;
   if (!p) return;
   const jobs = [];
@@ -570,7 +575,10 @@ app.loadAllMedia = async () => {
     }
   }
   jobs.push(loadGuide());
-  try { await Promise.all(jobs); } catch (e) { toast(`Erro ao carregar mídia: ${e.message}`, 'error'); }
+  let done = 0;
+  onProgress?.(0, jobs.length);
+  const tracked = onProgress ? jobs.map((j) => j.finally(() => onProgress(++done, jobs.length))) : jobs;
+  try { await Promise.all(tracked); } catch (e) { toast(`Erro ao carregar mídia: ${e.message}`, 'error'); }
   app.stage.dropUnused(p);
   if (S.ui) { renderMixer(app, S.ui.mixer); updateTransport(app, S.ui.transport, app.engine.position); }
 };
