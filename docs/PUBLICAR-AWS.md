@@ -17,7 +17,7 @@ Navegador do usuário ──HTTPS──▶ CloudFront (CDN, cópias perto do usu
 - **CloudFormation**: cria tudo isso a partir de um arquivo de texto, o [`deploy/aws-site.yaml`](../deploy/aws-site.yaml). É "infraestrutura como código": dá para recriar ou apagar tudo de uma vez.
 - **ACM** (Certificate Manager), opcional: o certificado HTTPS de um domínio próprio. Sem domínio, você usa um endereço `https://dxxxx.cloudfront.net` que já vem com HTTPS.
 
-**Custo:** o site tem uns 50 MB. Com pouco uso, fica dentro do nível gratuito permanente do CloudFront (1 TB de tráfego e 10 milhões de pedidos por mês) e custa centavos de S3. Mesmo assim, crie um alerta de gastos (passo 1).
+**Custo:** o site tem uns 50 MB. Com o **plano de preço fixo Free** do CloudFront (passo 4b), a entrega custa US$ 0 por mês e **não há cobrança de excedente**, mesmo que robôs baixem os arquivos sem parar. O S3 custa centavos. Mesmo assim, crie um alerta de gastos (passo 1).
 
 ---
 
@@ -100,6 +100,28 @@ O tipo de arquivo vai fixo no script porque o Windows às vezes registra `.js` c
 
 **Para atualizar depois:** rode o mesmo comando. Ele só envia o que mudou. Se você mudar as regras de tipo ou de cache no script, use `-Forcar` para reenviar tudo.
 
+## Passo 4b. Proteção contra robôs e cobranças: plano de preço fixo Free
+
+Sem proteção, um robô pode pedir os arquivos (os kits de bateria têm ~13 MB cada) milhares de vezes, e o CloudFront cobraria o tráfego. O **plano de preço fixo Free** do CloudFront resolve:
+- **US$ 0 por mês**, com 1 milhão de pedidos e 100 GB por mês;
+- **sem cobrança de excedente**: se o uso passar muito do limite por meses seguidos, a AWS pode deixar a entrega mais lenta, mas não cobra;
+- já inclui o **AWS WAF** (firewall) e a proteção contra ataques de negação de serviço. Pedidos bloqueados não contam no limite;
+- avisa por e-mail em 50%, 80% e 100% do uso.
+
+**Pré-requisitos** (o modelo `deploy/aws-site.yaml` já atende):
+- a conta precisa estar no **plano pago** da AWS. Contas no "Free plan" (com créditos) não podem usar planos fixos, mas também nunca são cobradas;
+- a distribuição usa só as regras **prontas** da AWS: **CachingOptimized** (cache) e **SecurityHeadersPolicy** (cabeçalhos). O plano Free não aceita regras próprias.
+
+**Como ativar (console):**
+1. **CloudFront** → **Distributions** → a sua distribuição.
+2. Escolha o **plano de preços** (*pricing plan*) **Free** e siga os passos de atualização.
+3. Quando pedir, crie o **Web ACL do AWS WAF** com as regras padrão. Ele é obrigatório enquanto o plano estiver ativo.
+4. Espere a distribuição sair de *Deploying* (alguns minutos).
+
+**Atenção:** o plano e o WAF ficam fora do CloudFormation. Depois de ativar, **não rode o `cloudformation deploy` de novo** sem antes incluir o WAF no modelo, porque a atualização tiraria o WAF da distribuição. Para publicar versões do app, use só o `publicar-aws.ps1`, que não mexe nisso.
+
+**Para voltar ao preço por uso:** cancele o plano na mesma tela. Para apagar a distribuição, é preciso cancelar o plano antes.
+
 ## Passo 5 (opcional). Domínio próprio
 
 Por exemplo, `app.seudominio.com.br`:
@@ -138,7 +160,8 @@ O app pede ao navegador "armazenamento persistente", para os projetos não serem
    aws s3 rm s3://NOME-DO-BUCKET --recursive
    ```
 
-2. Apague a stack, que remove o CloudFront, o bucket e as políticas:
+2. Se o plano de preço fixo estiver ativo, cancele o plano na distribuição (CloudFront → Distributions → a distribuição).
+3. Apague a stack, que remove o CloudFront, o bucket e as políticas:
 
    ```bash
    aws cloudformation delete-stack --stack-name multicorder --region sa-east-1
