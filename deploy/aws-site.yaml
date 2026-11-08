@@ -4,13 +4,13 @@ Description: >-
   com HTTPS (necessário para câmera, microfone e armazenamento no navegador), compressão e cache.
 
 # Plano de preço fixo: a distribuição é compatível com o plano Free do CloudFront (US$ 0/mês,
-# sem cobrança de excedente, com WAF). O plano e o WAF são ligados pelo console (veja
-# docs/PUBLICAR-AWS.md). Depois disso, NÃO rode o "cloudformation deploy" de novo sem antes
-# incluir o WAF aqui: a atualização tiraria o WAF da distribuição. Publicar versões do app
-# (publicar-aws.ps1) não mexe nisso.
+# sem cobrança de excedente, com WAF). O plano é ligado pelo console e cria o WAF; o ARN dele
+# entra aqui no parâmetro WebAclArn, para uma atualização da stack não tirar o WAF.
 #
-# Como usar: veja docs/PUBLICAR-AWS.md. Resumo:
-#   aws cloudformation deploy --stack-name multicorder --template-file deploy/aws-site.yaml --region sa-east-1
+# Como usar: veja docs/PUBLICAR-AWS.md. Resumo (os valores vêm da sua conta; não ficam no repositório):
+#   aws cloudformation deploy --stack-name multicorder --template-file deploy/aws-site.yaml
+#     --region sa-east-1 --parameter-overrides WebAclArn=arn:aws:wafv2:... DomainName=seudominio.com.br
+#     CertificateArn=arn:aws:acm:us-east-1:...
 #   powershell -File deploy/publicar-aws.ps1
 
 Parameters:
@@ -18,14 +18,22 @@ Parameters:
     Type: String
     Default: ''
     Description: >-
-      (Opcional) Domínio próprio, ex.: app.seudominio.com.br. Deixe vazio para usar o endereço
-      *.cloudfront.net que a AWS dá de graça.
+      (Opcional) Domínio próprio, ex.: seudominio.com.br. Com ele preenchido, a stack cria a zona
+      DNS no Route 53 (os servidores DNS saem em NameServers, para pôr no Registro.br). Com o
+      certificado (CertificateArn) também, o domínio passa a abrir o site. Vazio = só o endereço
+      *.cloudfront.net.
   CertificateArn:
     Type: String
     Default: ''
     Description: >-
       (Opcional, junto com DomainName) ARN do certificado do ACM para o domínio. Precisa ter sido
       criado na região us-east-1 (Norte da Virgínia), que é a que o CloudFront usa.
+  WebAclArn:
+    Type: String
+    Default: ''
+    Description: >-
+      (Opcional) ARN do Web ACL do AWS WAF ligado à distribuição. Obrigatório depois de ativar o
+      plano de preço fixo: sem ele, a atualização da stack tiraria o WAF.
   PriceClass:
     Type: String
     Default: PriceClass_All
@@ -35,9 +43,11 @@ Parameters:
       PriceClass_100 só EUA, Canadá e Europa.
 
 Conditions:
+  HasZone: !Not [!Equals [!Ref DomainName, '']]
   HasDomain: !And
     - !Not [!Equals [!Ref DomainName, '']]
     - !Not [!Equals [!Ref CertificateArn, '']]
+  HasWaf: !Not [!Equals [!Ref WebAclArn, '']]
 
 Resources:
   # Bucket privado: ninguém acessa direto pela internet; só o CloudFront (pela política abaixo).
@@ -85,6 +95,7 @@ Resources:
         HttpVersion: http2and3
         IPV6Enabled: true
         PriceClass: !Ref PriceClass
+        WebACLId: !If [HasWaf, !Ref WebAclArn, !Ref AWS::NoValue]
         Aliases: !If [HasDomain, [!Ref DomainName], !Ref AWS::NoValue]
         ViewerCertificate: !If
           - HasDomain
@@ -126,6 +137,37 @@ Resources:
               StringEquals:
                 AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}'
 
+  # Zona DNS do domínio no Route 53 (o plano de preço fixo inclui a zona e as consultas).
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    Condition: HasZone
+    Properties:
+      Name: !Ref DomainName
+      HostedZoneConfig:
+        Comment: Multicorder - VideoMusic Maker
+
+  # O domínio aponta para o CloudFront (IPv4 e IPv6). Z2FDTNDATAQYW2 é a zona fixa do CloudFront.
+  SiteRecordA:
+    Type: AWS::Route53::RecordSet
+    Condition: HasDomain
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt Distribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+  SiteRecordAAAA:
+    Type: AWS::Route53::RecordSet
+    Condition: HasDomain
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Name: !Ref DomainName
+      Type: AAAA
+      AliasTarget:
+        DNSName: !GetAtt Distribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+
 Outputs:
   BucketName:
     Description: Bucket com os arquivos do site
@@ -137,5 +179,13 @@ Outputs:
     Description: Endereço do MultiCorder
     Value: !If [HasDomain, !Sub 'https://${DomainName}', !Sub 'https://${Distribution.DomainName}']
   CloudFrontDomain:
-    Description: Domínio do CloudFront (para apontar um CNAME do seu domínio, se usar um)
+    Description: Domínio do CloudFront
     Value: !GetAtt Distribution.DomainName
+  HostedZoneId:
+    Condition: HasZone
+    Description: Zona DNS do domínio no Route 53
+    Value: !Ref HostedZone
+  NameServers:
+    Condition: HasZone
+    Description: Servidores DNS para colocar no Registro.br
+    Value: !Join [', ', !GetAtt HostedZone.NameServers]
