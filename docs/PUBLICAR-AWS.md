@@ -118,23 +118,29 @@ Sem proteção, um robô pode pedir os arquivos (os kits de bateria têm ~13 MB 
 3. Quando pedir, crie o **Web ACL do AWS WAF** com as regras padrão. Ele é obrigatório enquanto o plano estiver ativo.
 4. Espere a distribuição sair de *Deploying* (alguns minutos).
 
-**Atenção:** o plano e o WAF ficam fora do CloudFormation. Depois de ativar, **não rode o `cloudformation deploy` de novo** sem antes incluir o WAF no modelo, porque a atualização tiraria o WAF da distribuição. Para publicar versões do app, use só o `publicar-aws.ps1`, que não mexe nisso.
+**Atenção:** o plano e o WAF são ligados pelo console, fora do CloudFormation. Depois de ativar, copie o **ARN do Web ACL** (AWS WAF → Web ACLs, região *Global (CloudFront)*) e passe sempre `WebAclArn=<arn>` ao rodar o `cloudformation deploy`; sem ele, a atualização tiraria o WAF da distribuição. Para publicar versões do app, use só o `publicar-aws.ps1`, que não mexe nisso.
 
 **Para voltar ao preço por uso:** cancele o plano na mesma tela. Para apagar a distribuição, é preciso cancelar o plano antes.
 
 ## Passo 5 (opcional). Domínio próprio
 
-Por exemplo, `app.seudominio.com.br`:
+Exemplo com um domínio `.com.br` registrado no Registro.br, com o DNS no **Route 53** (o plano de preço fixo já inclui a zona DNS):
 
-1. **Certificado:** no console, troque a região para **us-east-1 (N. Virginia)**, porque o CloudFront só usa certificados de lá. Depois: *Certificate Manager* → *Request* → *Request a public certificate* → o seu domínio → validação por **DNS**.
-2. No painel do seu domínio (Registro.br, Cloudflare, Route 53…), crie o **CNAME** que o ACM mostra. Espere o status virar *Issued*.
-3. Atualize a stack com o domínio e o ARN do certificado:
+1. **Zona DNS:** atualize a stack só com o domínio. Ela cria a zona no Route 53 e mostra, nos *Outputs*, os quatro servidores DNS (`NameServers`):
 
    ```bash
-   aws cloudformation deploy --stack-name multicorder --template-file deploy/aws-site.yaml --region sa-east-1 --parameter-overrides DomainName=app.seudominio.com.br CertificateArn=arn:aws:acm:us-east-1:...
+   aws cloudformation deploy --stack-name multicorder --template-file deploy/aws-site.yaml --region sa-east-1 --parameter-overrides WebAclArn=<arn-do-waf> DomainName=seudominio.com.br
    ```
 
-4. No painel do domínio, crie um **CNAME** de `app` para o **CloudFrontDomain** que aparece nos *Outputs* da stack (`dxxxx.cloudfront.net`).
+2. **Registro.br:** no painel do domínio → *DNS* → *Alterar servidores DNS*, troque pelos quatro servidores do passo 1. A troca leva de minutos a algumas horas.
+3. **Certificado:** no console, troque a região para **us-east-1 (N. Virginia)**, porque o CloudFront só usa certificados de lá. *Certificate Manager* → *Request a public certificate* → o seu domínio → validação por **DNS**. Na tela do certificado, *Create records in Route 53* cria o registro de validação. Espere o status virar *Issued*.
+4. **Ligar o domínio:** rode a stack de novo, agora com o ARN do certificado. Ela põe o domínio na distribuição e cria os registros A e AAAA apontando para o CloudFront:
+
+   ```bash
+   aws cloudformation deploy --stack-name multicorder --template-file deploy/aws-site.yaml --region sa-east-1 --parameter-overrides WebAclArn=<arn-do-waf> DomainName=seudominio.com.br CertificateArn=arn:aws:acm:us-east-1:...
+   ```
+
+5. Em alguns minutos, `https://seudominio.com.br` abre o app. O endereço `dxxxx.cloudfront.net` continua funcionando.
 
 ## Os projetos de cada pessoa
 

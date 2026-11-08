@@ -4,6 +4,8 @@ App web para gravar vídeos musicais em grade de 2 a 6 canais (no estilo Acapell
 
 ![A tela do projeto](docs/manual/img/02-tela-do-projeto.png)
 
+**▶ Use online: [multivideomusicmaker.com.br](https://multivideomusicmaker.com.br)** (os projetos ficam só no seu navegador)
+
 **➡ [Manual completo, com fotos de cada funcionalidade](docs/MANUAL.md)**
 
 Navegadores: **Firefox desktop 130+** (o alvo principal) e **Chrome/Edge 126+**.
