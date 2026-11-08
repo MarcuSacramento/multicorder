@@ -408,3 +408,72 @@ fieldset.folded { padding-bottom: 2px; }
 /* Faltando altura, o mixer cede espaço antes das faixas (que mostram os canais) */
 .workspace > .fold-mixer { flex-shrink: 4; }
 .workspace > .fold-tracks { flex-shrink: 1; }
+
+/* ---------- Celular: prévia em cima, abas e o painel da aba (veja setupMobile em workspace.js) ---------- */
+.workspace.mobile { height: 100vh; height: 100dvh; }
+.workspace.mobile > .main { display: block; flex: 0 0 auto; height: 40vh; height: 40dvh; min-height: 0; }
+.workspace.mobile .stage-col { height: 100%; }
+.workspace.mobile .stage-wrap { padding: 6px; height: 100%; }
+.workspace.mobile > .statusbar { display: none; }
+.workspace.mobile .fold-bar, .workspace.mobile .fold-corner { display: none !important; }
+
+/* Barra de cima: uma linha só, que desliza para os lados */
+.workspace.mobile .topbar { flex-wrap: nowrap; overflow-x: auto; padding: 6px 8px; gap: 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.workspace.mobile .topbar::-webkit-scrollbar { display: none; }
+.workspace.mobile .topbar > * { flex: 0 0 auto; }
+.workspace.mobile .topbar .spacer { display: none; }
+.workspace.mobile .project-name { width: 9em; }
+
+/* Abas */
+.mtabs { display: flex; flex: 0 0 auto; background: var(--panel); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.mtabs::-webkit-scrollbar { display: none; }
+.mtabs button { flex: 1 0 auto; min-width: 58px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px 7px; border: none; border-radius: 0; background: none; color: var(--muted); font-size: 11px; }
+.mtabs button .mt-icon { font-size: 17px; line-height: 1; }
+.mtabs button[aria-selected="true"] { color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
+
+/* Painel da aba: só a escolhida aparece, com rolagem própria */
+.mpanel { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.mpanel > * { display: none !important; }
+.mpanel[data-tab="gravar"] > .fold-transport,
+.mpanel[data-tab="canal"] > .side-left,
+.mpanel[data-tab="faixas"] > .fold-tracks,
+.mpanel[data-tab="bateria"] > .drums-panel,
+.mpanel[data-tab="mixer"] > .fold-mixer,
+.mpanel[data-tab="exportar"] > .side-right { display: block !important; }
+.mpanel .side { width: auto; border: none; }
+.mpanel .side .side-head, .mpanel .side .side-rail { display: none; }
+.mpanel .side .inspector, .mpanel .side .exportbar { overflow: visible; padding: 10px 12px 24px; }
+.mpanel .fold-tracks > .tracks-below, .mpanel .fold-mixer > .mixer { overflow-y: visible; }
+.mpanel .mixer { overflow-x: auto; }
+.mpanel .drums-panel { border-top: none; }
+
+/* Gravação: botões maiores e a régua numa linha inteira */
+.mpanel .transport { flex-wrap: wrap; gap: 8px; padding: 10px 12px; border-top: none; }
+.mpanel .transport .timeline { flex: 1 1 100%; min-width: 0; order: 5; height: 54px; }
+.mpanel .transport .time { order: 4; }
+
+/* Toque: alvos de pelo menos ~40 px e campos sem zoom automático do iOS (16 px) */
+.workspace.mobile button { min-height: 38px; }
+.workspace.mobile .mtabs button { min-height: 50px; }
+.workspace.mobile input, .workspace.mobile select { font-size: 16px; }
+.workspace.mobile input[type="range"] { min-height: 30px; }
+
+/* Janelas no celular: tela cheia */
+@media (max-width: 760px) {
+  dialog.modal, dialog.modal.wide { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; }
+  .home { padding: 12px; }
+}
+/* Bateria no celular: a fileira de padrões desliza para os lados; o resto quebra linha */
+.mpanel .drums-panel { overflow-x: hidden; }
+.mpanel .dr-tabs { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: thin; }
+.mpanel .dr-tabs > * { flex: 0 0 auto; }
+/* Celular deitado: prévia à esquerda; abas e painel à direita */
+@media (orientation: landscape) and (max-height: 520px) {
+  .workspace.mobile { display: grid; grid-template-columns: minmax(0, 44%) minmax(0, 1fr); grid-template-rows: max-content max-content minmax(0, 1fr); }
+  .workspace.mobile > .topbar { grid-column: 1 / -1; grid-row: 1; padding: 4px 8px; }
+  .workspace.mobile > .main { grid-column: 1; grid-row: 2 / 4; height: auto; }
+  .workspace.mobile > .mtabs { grid-column: 2; grid-row: 2; }
+  .workspace.mobile > .mpanel { grid-column: 2; grid-row: 3; }
+  .workspace.mobile .mtabs button { min-height: 40px; padding: 4px; }
+  .workspace.mobile .mtabs button .mt-icon { font-size: 14px; }
+}

@@ -20,7 +20,8 @@ import { fmtTime, uid } from '../../engine/util.js';
 import { LYRIC_POSITIONS } from '../../engine/compositor.js';
 import { checkbox, h, openDialog, select, slider, toast } from '../dom.js';
 
-const LABEL_W = 112;
+// Largura da coluna dos nomes: menor em telas estreitas (celular), para sobrar espaço para a onda.
+let LABEL_W = 112;
 const RULER_H = 16;
 const LAYOUT_H = 20;
 const SECTIONS_H = 20;
@@ -947,6 +948,7 @@ export class Tracks {
       const v = this.view;
       if (pos > v.start + v.len * 0.95 || pos < v.start) { this.view = { start: Math.max(0, pos - v.len * 0.05), len: v.len }; }
     }
+    LABEL_W = W < 520 ? 82 : 112;
     const vs = this.span(Math.max(0, pos));
     const buffers = this.app.engine.buffers;
     const chKey = p.channels.map((ch) => [

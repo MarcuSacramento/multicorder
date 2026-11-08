@@ -13,6 +13,10 @@ import { barBeat, Timeline } from './timeline.js';
  *   [coluna esquerda: canal selecionado] [centro: só a prévia do vídeo] [coluna direita: exportar]
  *   gravação (botões, régua de compassos, relógio) · faixas · bateria · mixer · barra de status
  * As colunas recolhem para uma tira fina; os blocos de baixo também recolhem. O app lembra tudo.
+ *
+ * No celular (tela estreita, ou baixa com toque) a tela vira: barra de cima numa linha que desliza,
+ * a prévia em cima, uma barra de abas (Gravar, Canal, Faixas, Bateria, Mixer, Exportar) e o painel
+ * da aba escolhida ocupando o resto, com rolagem própria. Os painéis são os mesmos do computador.
  */
 export function buildWorkspace(app, root) {
   const ui = {
@@ -33,16 +37,93 @@ export function buildWorkspace(app, root) {
   ui.mixerBlock = foldBlock('mixer', 'Mixer', ui.mixer);
   // Faixas: mesmo jeito de mostrar/esconder do mixer
   ui.tracksBlock = foldBlock('tracks', 'Faixas', ui.tracksBelow, { initialClosed: !app.tracks.open, onToggle: (closed) => app.tracks.setOpen(!closed) });
-  root.replaceChildren(h('div', { class: 'workspace' },
+  ui.stageCol = h('section', { class: 'stage-col' }, ui.stageWrap);
+  ui.mainEl = h('div', { class: 'main' }, ui.left, ui.stageCol, ui.right);
+  ui.ws = h('div', { class: 'workspace' },
     ui.topbar,
-    h('div', { class: 'main' }, ui.left, h('section', { class: 'stage-col' }, ui.stageWrap), ui.right),
+    ui.mainEl,
     ui.transportBlock,
     ui.tracksBlock,
     ui.drums,
     ui.mixerBlock,
-    ui.status));
+    ui.status);
+  root.replaceChildren(ui.ws);
   ui.tracksBelow.append(app.tracks.el);
+  setupMobile(app, ui);
   return ui;
+}
+
+/** Abas do modo celular: [id, ícone, nome]. */
+const MOBILE_TABS = [
+  ['gravar', '●', 'Gravar'],
+  ['canal', '🎛', 'Canal'],
+  ['faixas', '〰', 'Faixas'],
+  ['bateria', '🥁', 'Bateria'],
+  ['mixer', '🎚', 'Mixer'],
+  ['exportar', '⇩', 'Exportar'],
+];
+// Celular em pé (tela estreita) ou deitado (pouca altura e largura de celular)
+const MOBILE_QUERY = '(max-width: 760px), (max-height: 520px) and (max-width: 1100px)';
+
+/**
+ * Modo celular: muda a arrumação da tela (não os painéis) quando a tela fica pequena, e volta ao
+ * do computador quando ela cresce. A aba escolhida fica guardada.
+ */
+function setupMobile(app, ui) {
+  const panelOf = {
+    gravar: ui.transportBlock, canal: ui.left, faixas: ui.tracksBlock, bateria: ui.drums, mixer: ui.mixerBlock, exportar: ui.right,
+  };
+  const buttons = {};
+  ui.mtabs = h('nav', { class: 'mtabs', role: 'tablist', 'aria-label': 'Painéis' },
+    MOBILE_TABS.map(([id, icon, name]) => (buttons[id] = h('button', {
+      role: 'tab', 'aria-selected': 'false', onClick: () => app.mobileTab(id),
+    }, h('span', { class: 'mt-icon', 'aria-hidden': 'true' }, icon), h('span', null, name)))));
+  ui.mpanel = h('div', { class: 'mpanel', role: 'tabpanel' });
+
+  app.mobileTab = (id) => {
+    if (!panelOf[id]) id = 'gravar';
+    ui.mpanel.dataset.tab = id;
+    for (const [k, btn] of Object.entries(buttons)) btn.setAttribute('aria-selected', String(k === id));
+    try { localStorage.setItem('mc.mtab', id); } catch { /* ok */ }
+    if (id === 'bateria' && !app.S.drumsOpen) app.toggleDrums?.();
+    if (id === 'faixas') app.tracks.key = '';
+    ui.mpanel.scrollTop = 0;
+  };
+
+  const blocks = [ui.transportBlock, ui.tracksBlock, ui.mixerBlock];
+  const apply = () => {
+    const on = matchMedia(MOBILE_QUERY).matches;
+    if (on === !!ui.mobile) return;
+    ui.mobile = on;
+    ui.ws.classList.toggle('mobile', on);
+    if (on) {
+      ui.mpanel.append(ui.transportBlock, ui.left, ui.tracksBlock, ui.drums, ui.mixerBlock, ui.right);
+      ui.mainEl.after(ui.mtabs, ui.mpanel);
+      for (const w of blocks) w._mobile(true);
+      ui.left._mobile(true);
+      ui.right._mobile(true);
+      let t = 'gravar';
+      try { t = localStorage.getItem('mc.mtab') || t; } catch { /* ok */ }
+      app.mobileTab(t);
+    } else {
+      ui.mainEl.prepend(ui.left);
+      ui.mainEl.append(ui.right);
+      ui.mainEl.after(ui.transportBlock, ui.tracksBlock, ui.drums, ui.mixerBlock);
+      ui.mtabs.remove();
+      ui.mpanel.remove();
+      for (const w of blocks) w._mobile(false);
+      ui.left._mobile(false);
+      ui.right._mobile(false);
+    }
+    app.tracks.key = '';
+    app.stage?.resize();
+  };
+  // Uma tela de projeto por vez: o ouvinte da anterior sai
+  app._mobileOff?.();
+  const mq = matchMedia(MOBILE_QUERY);
+  mq.addEventListener('change', apply);
+  app._mobileOff = () => mq.removeEventListener('change', apply);
+  apply();
 }
 
 /** Coluna lateral recolhível: título com ◂/▸; recolhida, vira uma tira com o nome em pé. */
@@ -63,6 +144,11 @@ function sideCol(app, side, title, content) {
   };
   col.append(rail, head, content);
   col._set = set;
+  // No celular a coluna vira um painel de aba: sempre aberta (sem mudar a escolha guardada).
+  col._mobile = (on) => {
+    if (on) col.classList.remove('collapsed');
+    else set(localStorage.getItem(key) === '1');
+  };
   set(localStorage.getItem(key) === '1');
   return col;
 }
@@ -88,6 +174,18 @@ function foldBlock(id, title, content, { initialClosed = false, onToggle = null 
   wrap.append(bar, corner, content);
   const saved = localStorage.getItem(key);
   set(saved == null ? initialClosed : saved === '1');
+  // No celular o bloco vira um painel de aba: sempre aberto, sem a tira nem a seta.
+  wrap._mobile = (on) => {
+    if (on) {
+      wrap.classList.remove('closed');
+      content.hidden = false;
+      bar.hidden = corner.hidden = true;
+      onToggle?.(false);
+    } else {
+      const v = localStorage.getItem(key);
+      set(v == null ? initialClosed : v === '1');
+    }
+  };
   return wrap;
 }
 

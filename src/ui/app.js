@@ -511,6 +511,7 @@ app.collapsible = collapsible;
 /** "Exportar" na barra de cima: abre a coluna da direita (se recolhida) e leva até os botões, no fim dela. */
 app.showExportPanel = () => {
   if (!S.ui) return;
+  if (S.ui.mobile) { app.mobileTab('exportar'); return; } // celular: a aba Exportar
   S.ui.right._set(false);
   renderExportPanel(app, S.ui.exportbar);
   // os botões ficam no fim da coluna: rola até eles
