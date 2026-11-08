@@ -27,9 +27,13 @@ param(
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 
-if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
-  throw 'AWS CLI nao encontrado. Instale: https://aws.amazon.com/cli/ (e rode "aws configure").'
-}
+# AWS CLI: o do PATH ou o do lugar padrao de instalacao (terminais abertos antes de instalar
+# ainda nao enxergam o PATH novo).
+$cli = Get-Command aws -ErrorAction SilentlyContinue
+if ($cli) { $AwsExe = $cli.Source }
+elseif (Test-Path "$env:ProgramFiles\Amazon\AWSCLIV2\aws.exe") { $AwsExe = "$env:ProgramFiles\Amazon\AWSCLIV2\aws.exe" }
+else { throw 'AWS CLI nao encontrado. Instale: https://aws.amazon.com/cli/ (e rode "aws configure sso").' }
+function aws { & $AwsExe @args }
 
 Write-Host "Lendo a stack '$Stack' ($Region)..."
 $outputs = aws cloudformation describe-stacks --stack-name $Stack --region $Region --query 'Stacks[0].Outputs' --output json | ConvertFrom-Json
