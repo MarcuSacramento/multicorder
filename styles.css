@@ -354,6 +354,7 @@ button.tr-pan.active { background: #003a46; border-color: #6fe3ff; color: #6fe3f
 /* Ícone ao lado do nome na tela inicial */
 h1.brand { display: flex; align-items: center; gap: 10px; }
 h1.brand img { border-radius: 8px; }
+h1.brand .brand-sub { font-size: .55em; font-weight: 500; color: var(--muted); align-self: flex-end; margin-bottom: .3em; }
 
 /* Painel do espectro do master (flutuante) */
 .spectrum-panel { position: fixed; right: 16px; bottom: 16px; z-index: 50; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }

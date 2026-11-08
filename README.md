@@ -1,4 +1,4 @@
-# MultiCorder
+# Multicorder - VideoMusic Maker
 
 App web para gravar vídeos musicais em grade de 2 a 6 canais (no estilo Acapella). Você grava um canal de cada vez, ouvindo os anteriores no fone, mixa com efeitos e exporta um MP4 pronto para as redes. Funciona com webcam e com interface de áudio USB.
 
@@ -23,7 +23,7 @@ python serve.py --open
 O endereço é **http://localhost:8080**. `localhost` conta como contexto seguro, então câmera, microfone, OPFS e AudioWorklet funcionam sem HTTPS. Para usar em outra máquina, sirva a pasta por HTTPS.
 
 **Portas:** os projetos ficam salvos no navegador, separados por endereço, e a porta faz parte do endereço. Use sempre a mesma porta (8080).
-- Se o MultiCorder já estiver rodando, o `iniciar.bat` só abre o navegador.
+- Se o Multicorder já estiver rodando, o `iniciar.bat` só abre o navegador.
 - Se outro programa estiver usando a 8080, ele usa a próxima livre (8081…) e avisa. Nesse endereço, os projetos da 8080 não aparecem.
 - Para escolher outra porta: `iniciar.bat 8090`.
 

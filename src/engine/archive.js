@@ -19,7 +19,7 @@ export async function packProject(store, pid) {
 /** Importa como projeto novo (id novo), para nunca sobrescrever um existente. */
 export async function unpackProject(store, blob) {
   const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
-  if (new TextDecoder().decode(head.slice(0, 8)) !== MAGIC) throw new Error('Arquivo não é um projeto MultiCorder (.mcproj).');
+  if (new TextDecoder().decode(head.slice(0, 8)) !== MAGIC) throw new Error('Arquivo não é um projeto do Multicorder (.mcproj).');
   const hlen = new DataView(head.buffer).getUint32(8, true);
   const header = JSON.parse(await blob.slice(12, 12 + hlen).text());
   let off = 12 + hlen;

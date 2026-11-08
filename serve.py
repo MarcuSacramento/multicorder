@@ -99,7 +99,7 @@ def main():
     for port in range(PORT, PORT + 10):
         url = f"http://localhost:{port}"
         if is_multicorder(port):
-            print(f"O MultiCorder já está rodando em {url} — abrindo o navegador.")
+            print(f"O Multicorder já está rodando em {url} — abrindo o navegador.")
             open_browser(url)
             return
         try:
@@ -108,7 +108,7 @@ def main():
             print(f"Porta {port} ocupada por outro programa.")
             continue
         with httpd:
-            print(f"MultiCorder em {url}  (Ctrl+C ou feche esta janela para parar)")
+            print(f"Multicorder - VideoMusic Maker em {url}  (Ctrl+C ou feche esta janela para parar)")
             if port != PORT:
                 print(f"ATENÇÃO: usando a porta {port} em vez de {PORT}. Os projetos salvos no navegador")
                 print(f"ficam separados por porta; os de {PORT} só aparecem em http://localhost:{PORT}.")

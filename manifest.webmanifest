@@ -1,6 +1,6 @@
 {
-  "name": "MultiCorder",
-  "short_name": "MultiCorder",
+  "name": "Multicorder - VideoMusic Maker",
+  "short_name": "Multicorder",
   "description": "Vídeos musicais em grade de 2 a 6 canais: grave um canal de cada vez, mixe e exporte.",
   "lang": "pt-BR",
   "start_url": "./",

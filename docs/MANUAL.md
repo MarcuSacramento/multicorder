@@ -1,6 +1,6 @@
-# Manual do MultiCorder
+# Manual do Multicorder - VideoMusic Maker
 
-O MultiCorder grava vídeos musicais em grade, com 2 a 6 quadros. Você grava um canal de cada vez, ouvindo no fone o que já foi gravado. Depois mixa, ajusta o vídeo e exporta um MP4 pronto para Reels, TikTok, YouTube, Instagram ou WhatsApp.
+O Multicorder grava vídeos musicais em grade, com 2 a 6 quadros. Você grava um canal de cada vez, ouvindo no fone o que já foi gravado. Depois mixa, ajusta o vídeo e exporta um MP4 pronto para Reels, TikTok, YouTube, Instagram ou WhatsApp.
 
 As fotos deste manual são do projeto **Head Over Heels**, gravado no próprio app: baixo, riffs e violão base em vídeo, mais um quadro com os pads da bateria.
 

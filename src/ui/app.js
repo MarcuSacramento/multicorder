@@ -83,7 +83,7 @@ export const app = {
 // ---------------------------------------------------------------- Início
 
 async function boot() {
-  root.replaceChildren(h('div', { class: 'splash' }, 'Carregando MultiCorder…'));
+  root.replaceChildren(h('div', { class: 'splash' }, 'Carregando Multicorder…'));
   app.caps = await detectCapabilities();
   if (app.caps.missingCore.length) {
     return fatal(`Este navegador não tem: ${app.caps.missingCore.join(', ')}. Use o Firefox 130+ ou o Chrome 126+ no computador, abrindo por http://localhost.`);
@@ -122,7 +122,7 @@ async function restoreSink() {
 }
 
 function fatal(msg) {
-  root.replaceChildren(h('div', { class: 'fatal card' }, h('h1', null, 'MultiCorder'), h('p', null, msg)));
+  root.replaceChildren(h('div', { class: 'fatal card' }, h('h1', null, 'Multicorder - VideoMusic Maker'), h('p', null, msg)));
 }
 
 app.goHome = async () => {

@@ -57,7 +57,7 @@ export async function renderHome(app, root) {
 
   root.replaceChildren(h('div', { class: 'home' },
     h('header', { class: 'home-head' },
-      h('h1', { class: 'brand' }, h('img', { src: 'icons/icon.svg', alt: '', width: 34, height: 34 }), 'MultiCorder'),
+      h('h1', { class: 'brand' }, h('img', { src: 'icons/icon.svg', alt: '', width: 34, height: 34 }), 'Multicorder', h('span', { class: 'brand-sub' }, 'VideoMusic Maker')),
       h('p', { class: 'muted' }, 'Vídeos musicais em grade de 2 a 6 canais. Grave um canal de cada vez ouvindo os anteriores, mixe e exporte.')),
     browserNote(app.caps),
     h('div', { class: 'home-grid' },

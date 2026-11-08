@@ -1,6 +1,6 @@
-# Publicar o MultiCorder na AWS
+# Publicar o Multicorder - VideoMusic Maker na AWS
 
-Este guia coloca o MultiCorder na internet com **HTTPS**, usando o **S3** para guardar os arquivos e o **CloudFront** para entregá-los. É o jeito mais comum de publicar um site estático na AWS, e cada passo explica o que o serviço faz.
+Este guia coloca o Multicorder na internet com **HTTPS**, usando o **S3** para guardar os arquivos e o **CloudFront** para entregá-los. É o jeito mais comum de publicar um site estático na AWS, e cada passo explica o que o serviço faz.
 
 ## Como funciona
 
@@ -10,7 +10,7 @@ Navegador do usuário ──HTTPS──▶ CloudFront (CDN, cópias perto do usu
         └─ grava, mixa e exporta no próprio navegador; projetos ficam no navegador de cada pessoa
 ```
 
-- O MultiCorder é **só arquivos estáticos** (HTML, JavaScript, CSS, ícones e os kits de bateria). Não há servidor nem banco de dados, e os vídeos de ninguém passam pela AWS.
+- O Multicorder é **só arquivos estáticos** (HTML, JavaScript, CSS, ícones e os kits de bateria). Não há servidor nem banco de dados, e os vídeos de ninguém passam pela AWS.
 - **S3** (Simple Storage Service): guarda os arquivos. O bucket é **privado**; só o CloudFront consegue ler.
 - **CloudFront**: a CDN. Entrega os arquivos com HTTPS a partir do ponto mais perto do usuário (há pontos em São Paulo e no Rio), comprime o código e guarda cópias.
 - **OAC** (Origin Access Control): a "chave" que deixa só o CloudFront ler o bucket.
